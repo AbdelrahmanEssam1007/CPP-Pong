@@ -111,10 +111,10 @@ public:
 
   void Move(const int ball_y) {
     if (y + static_cast<float>(height) / 2.0f < static_cast<float>(ball_y) && y + static_cast<float>(height) < static_cast<float>(GetScreenHeight())) {
-      y += static_cast<float>(speed);
+      y += static_cast<float>(speed) * 0.65f;
     }
     if (y + static_cast<float>(height) / 2.0f > static_cast<float>(ball_y) && y > 0.0f) {
-      y -= static_cast<float>(speed);
+      y -= static_cast<float>(speed) * 0.65f;
     }
   }
 };
@@ -198,6 +198,14 @@ int main() {
       opponent->Draw();
       DrawText(TextFormat("%i", p1Score), screenWidth / 4 - 50, 20, 80, WHITE);
       DrawText(TextFormat("%i", p2Score), screenWidth / 4 * 3 - 50, 20, 80, WHITE);
+
+      DrawText("Press R to return to menu", screenWidth/4 + 70, screenHeight - 30, 20, GRAY);
+      //check if R is pressed, return to menu
+      if (IsKeyPressed(KEY_R)) {
+        gameState = MENU;
+        p1Score = 0;
+        p2Score = 0;
+      }
     }
     
     EndDrawing();
