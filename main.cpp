@@ -185,10 +185,12 @@ int main() {
 
       // Collision
       if (CheckCollisionCircleRec(Vector2{ball.x, ball.y}, ball.radius, Rectangle{pad.x, pad.y, static_cast<float>(pad.width), static_cast<float>(pad.height)})) {
+        ball.x = pad.x - ball.radius; // Move ball back to prevent multiple collisions
         ball.xSpeed *= -1;
       }
 
       if (CheckCollisionCircleRec(Vector2{ball.x, ball.y}, ball.radius, Rectangle{opponent->x, opponent->y, static_cast<float>(opponent->width), static_cast<float>(opponent->height)})) {
+        ball.x = opponent->x + static_cast<float> (opponent->width) + ball.radius; // Move ball back to prevent multiple collisions
         ball.xSpeed *= -1;
       }
 
