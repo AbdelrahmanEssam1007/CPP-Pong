@@ -3,6 +3,7 @@ project(pong)
 
 # Generate compile_commands.json
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_CXX_STANDARD 26)
 
 # Dependencies
 set(RAYLIB_VERSION 5.5)
