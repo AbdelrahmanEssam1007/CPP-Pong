@@ -1,14 +1,15 @@
 #include <iostream>
-#include <raylib.h>
 #include <memory>
+#include <raylib.h>
 
 using std::cout, std::endl, std::cin, std::string;
 
 int p1Score = 0;
 int p2Score = 0;
 
+
 class Ball {
-public:
+ public:
   float x, y;
   float radius;
   int xSpeed, ySpeed;
@@ -54,7 +55,7 @@ public:
 };
 
 class Paddle {
-public:
+ public:
   virtual ~Paddle() = default;
   float x, y;
   int width, height;
@@ -68,7 +69,8 @@ public:
     speed = 9;
   }
 
-  virtual void Move() {}
+  virtual void Move() {
+  }
 
   void Draw() const {
     DrawRectangle(static_cast<int>(x), static_cast<int>(y), width, height, WHITE);
@@ -77,8 +79,9 @@ public:
 
 // Player 1 Paddle (Arrow Key Movement)
 class PlayerPaddle final : public Paddle {
-public:
-  PlayerPaddle(const float startX, const float startY) : Paddle(startX, startY) {}
+ public:
+  PlayerPaddle(const float startX, const float startY) : Paddle(startX, startY) {
+  }
 
   void Move() override {
     if (IsKeyDown(KEY_UP) && y > 0.0f) {
@@ -92,8 +95,9 @@ public:
 
 // Player 2 Paddle (W/S Movement)
 class p2Paddle final : public Paddle {
-public:
-  p2Paddle(const float startX, const float startY) : Paddle(startX, startY) {}
+ public:
+  p2Paddle(const float startX, const float startY) : Paddle(startX, startY) {
+  }
 
   void Move() override {
     if (IsKeyDown(KEY_W) && y > 0.0f) {
@@ -106,11 +110,13 @@ public:
 };
 
 class CPUPaddle final : public Paddle {
-public:
-  CPUPaddle(const float startX, const float startY) : Paddle(startX, startY) {}
+ public:
+  CPUPaddle(const float startX, const float startY) : Paddle(startX, startY) {
+  }
 
   void Move(const int ball_y) {
-    if (y + static_cast<float>(height) / 2.0f < static_cast<float>(ball_y) && y + static_cast<float>(height) < static_cast<float>(GetScreenHeight())) {
+    if (y + static_cast<float>(height) / 2.0f < static_cast<float>(ball_y) &&
+        y + static_cast<float>(height) < static_cast<float>(GetScreenHeight())) {
       y += static_cast<float>(speed) * 0.65f;
     }
     if (y + static_cast<float>(height) / 2.0f > static_cast<float>(ball_y) && y > 0.0f) {
@@ -120,6 +126,33 @@ public:
 };
 
 enum GameState { MENU, PLAYING };
+void DecideWinner(GameState& gameState) {
+  if (p1Score == 5 || p2Score == 5) {
+    while (!IsKeyPressed(KEY_R)) {
+      if (IsKeyPressed(KEY_ESCAPE) || WindowShouldClose()) {
+        exit(0);
+      }
+      BeginDrawing();
+      ClearBackground(BLACK);
+
+      const char* winnerText = (p1Score == 5) ? "Player 1 Wins!" : (p2Score == 5) ? "Player 2 Wins!" : "";
+
+      if (*winnerText != '\0') {
+        DrawText(winnerText, GetScreenWidth() / 2 - MeasureText(winnerText, 40) / 2, GetScreenHeight() / 2 - 40, 40,
+                 WHITE);
+      }
+
+      DrawText("Press R to restart", GetScreenWidth() / 2 - MeasureText("Press R to restart", 20) / 2,
+               GetScreenHeight() / 2 + 40, 20, WHITE);
+
+      EndDrawing();
+    }
+
+    gameState = MENU;  // Change game state to MENU
+    p1Score = 0;  // Reset scores
+    p2Score = 0;
+  }
+}
 
 int main() {
   constexpr int screenWidth = 900;
@@ -129,6 +162,7 @@ int main() {
 
   GameState gameState = MENU;
   int gameMode = 0;
+  bool isPaused = false;  // Flag to control pause state
 
   Ball ball;
   PlayerPaddle pad(static_cast<float>(screenWidth) - 40.0f, static_cast<float>(screenHeight) / 2.0f - 50.0f);
@@ -146,12 +180,10 @@ int main() {
         Color color;
       };
 
-      MenuOption options[] = {
-        {"PONG", 50, 80, WHITE},
-        {"1 - Play against CPU", 200, 30, WHITE},
-        {"2 - 2 Player Mode", 250, 30, WHITE},
-        {"Press 1 or 2 to select", 350, 20, GRAY}
-      };
+      MenuOption options[] = {{"PONG", 50, 80, WHITE},
+                              {"1 - Play against CPU", 200, 30, WHITE},
+                              {"2 - 2 Player Mode", 250, 30, WHITE},
+                              {"Press 1 or 2 to select", 350, 20, GRAY}};
 
       for (const auto& [text, y, fontSize, color] : options) {
         const int textWidth = MeasureText(text, fontSize);
@@ -168,7 +200,7 @@ int main() {
         opponent = std::make_unique<p2Paddle>(20.0f, static_cast<float>(screenHeight) / 2.0f - 50.0f);
         gameState = PLAYING;
       }
-    } 
+    }
     else if (gameState == PLAYING) {
       DrawLine(screenWidth / 2, 0, screenWidth / 2, screenHeight, WHITE);
 
@@ -179,18 +211,24 @@ int main() {
         if (auto* cpuPaddle = dynamic_cast<CPUPaddle*>(opponent.get())) {
           cpuPaddle->Move(static_cast<int>(ball.y));
         }
-      } else {
+      }
+      else {
         opponent->Move();
       }
 
       // Collision
-      if (CheckCollisionCircleRec(Vector2{ball.x, ball.y}, ball.radius, Rectangle{pad.x, pad.y, static_cast<float>(pad.width), static_cast<float>(pad.height)})) {
-        ball.x = pad.x - ball.radius; // Move ball back to prevent multiple collisions
+      if (CheckCollisionCircleRec(
+            Vector2{ball.x, ball.y}, ball.radius,
+            Rectangle{pad.x, pad.y, static_cast<float>(pad.width), static_cast<float>(pad.height)})) {
+        ball.x = pad.x - ball.radius;  // Move ball back to prevent multiple collisions
         ball.xSpeed *= -1;
       }
 
-      if (CheckCollisionCircleRec(Vector2{ball.x, ball.y}, ball.radius, Rectangle{opponent->x, opponent->y, static_cast<float>(opponent->width), static_cast<float>(opponent->height)})) {
-        ball.x = opponent->x + static_cast<float> (opponent->width) + ball.radius; // Move ball back to prevent multiple collisions
+      if (CheckCollisionCircleRec(Vector2{ball.x, ball.y}, ball.radius,
+                                  Rectangle{opponent->x, opponent->y, static_cast<float>(opponent->width),
+                                            static_cast<float>(opponent->height)})) {
+        ball.x = opponent->x + static_cast<float>(opponent->width) +
+          ball.radius;  // Move ball back to prevent multiple collisions
         ball.xSpeed *= -1;
       }
 
@@ -201,15 +239,9 @@ int main() {
       DrawText(TextFormat("%i", p1Score), screenWidth / 4 - 50, 20, 80, WHITE);
       DrawText(TextFormat("%i", p2Score), screenWidth / 4 * 3 - 50, 20, 80, WHITE);
 
-      DrawText("Press R to return to menu", screenWidth/4 + 70, screenHeight - 30, 20, GRAY);
-      //check if R is pressed, return to menu
-      if (IsKeyPressed(KEY_R)) {
-        gameState = MENU;
-        p1Score = 0;
-        p2Score = 0;
-      }
+      DecideWinner(gameState);
     }
-    
+
     EndDrawing();
   }
 
